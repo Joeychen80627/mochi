@@ -1,6 +1,8 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
   import { onMount } from 'svelte';
+  import liff from '@line/liff';
+
 
   let form = {
     name: '',
@@ -10,7 +12,8 @@
     delivery: '自取',
     date: '',
     time: '',        // ⭐ 新增：時段欄位
-    address: ''
+    address: '',
+    userId:''
   };
 
   const showConfirm = writable(false);
@@ -20,7 +23,14 @@
   const availableTimes = ["15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]; // ⭐ 時段選項
 
   // 日期範圍 +2~10 天
-  onMount(() => {
+  onMount(async () => {
+    await liff.init({ liffId: "2009093660-GlErhHvm" });
+    if (!liff.isLoggedIn()) {
+      liff.login(); // 如果沒登入會跳到 LINE 登入頁
+    }
+    const profile = await liff.getProfile();
+    form.userId = profile.userId;   // ⭐ 這個非常重要
+    
     const today = new Date();
     const min = new Date(today);
 
@@ -117,7 +127,7 @@
     <label class="block font-semibold mb-2">數量</label>
     <div class="flex items-center gap-2 w-full">
       <button type="button" on:click={() => form.quantity = Math.max(1, form.quantity - 1)} class="bg-gray-300 text-2xl px-4 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center">−</button>
-      <input type="text" min="1" bind:value={form.quantity} class="border rounded-lg p-4 text-xl text-center h-14 flex-1" inputmode="numeric" />
+      <input type="text" min="1" bind:value={form.quantity} class="border rounded-lg p-4 text-xl text-center h-14 flex-1 max-w-46 box-border appearance-none" inputmode="numeric" />
       <button type="button" on:click={() => form.quantity = form.quantity + 1} class="bg-gray-300 text-2xl px-4 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center">+</button>
     </div>
 
