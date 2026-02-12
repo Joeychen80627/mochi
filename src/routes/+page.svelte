@@ -9,6 +9,7 @@
     quantity: 1,
     delivery: '自取',
     date: '',
+    time: '',        // ⭐ 新增：時段欄位
     address: ''
   };
 
@@ -16,6 +17,7 @@
   const showComplete = writable(false);
   let submittedOrder: typeof form = { ...form };
   let availableDates: string[] = [];
+  const availableTimes = ["15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]; // ⭐ 時段選項
 
   // 日期範圍 +2~10 天
   onMount(() => {
@@ -44,6 +46,9 @@
   function submitForm() {
     if (!form.name) return alert('請輸入姓名');
     if (!validPhone(form.phone)) return alert('電話格式錯誤');
+    if (!form.date) return alert('請選擇日期');
+    if (!form.time) return alert('請選擇時段'); // ⭐ 新增時段驗證
+
     if (form.delivery === '外送' && form.quantity < 10) {
       alert('外送需滿10盒，已自動改為自取');
       form.delivery = '自取';
@@ -56,28 +61,27 @@
   }
 
   async function confirmOrder() {
-  showConfirm.set(false);
+    showConfirm.set(false);
 
-  try {
-    // 呼叫自己 Azure Function 的 endpoint
-    const res = await fetch('/api/order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
+    try {
+      const res = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
 
-    const result = await res.json();
+      const result = await res.json();
 
-    if (result.success === true || result.status === 'success') {
-      showComplete.set(true);
-    } else {
-      alert('送出失敗：' + result.message);
+      if (result.success === true || result.status === 'success') {
+        showComplete.set(true);
+      } else {
+        alert('送出失敗：' + result.message);
+      }
+    } catch (err: any) {
+      alert('送出失敗，請稍後再試');
+      console.error(err);
     }
-  } catch (err: any) {
-    alert('送出失敗，請稍後再試');
-    console.error(err);
   }
-}
 
   function modifyOrder() {
     showConfirm.set(false);
@@ -85,10 +89,8 @@
 </script>
 
 <div class="min-h-screen flex flex-col items-center p-4 bg-[#F1E1FF]">
-  <!-- Banner -->
   <img src="/h.png" alt="Banner" class="w-full max-h-64 object-cover rounded-md mb-6">
 
-  <!-- 表單 -->
   <div class="w-full max-w-md bg-white p-6 rounded-lg shadow-md space-y-5 text-xl">
     <h2 class="text-3xl font-bold mb-4">訂購資訊</h2>
 
@@ -114,37 +116,17 @@
     <!-- 訂購數量 -->
     <label class="block font-semibold mb-2">數量</label>
     <div class="flex items-center gap-2 w-full">
-    <!-- 減少按鈕 -->
-    <button
-      type="button"
-      on:click={() => form.quantity = Math.max(1, form.quantity - 1)}
-      class="bg-gray-300 text-2xl px-4 py-0 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center shrink-0"
-    >−</button>
-
-    <!-- 輸入框 -->
-    <input
-      type="text"
-      min="1"
-      bind:value={form.quantity}
-      class="border rounded-lg p-4 text-xl text-center h-14 flex-1 max-w-46 box-border appearance-none"
-      inputmode="numeric"
-    />
-
-    <!-- 增加按鈕 -->
-    <button
-      type="button"
-      on:click={() => form.quantity = form.quantity + 1}
-      class="bg-gray-300 text-2xl px-4 py-0 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center shrink-0"
-    >+</button>
-  </div>
-
+      <button type="button" on:click={() => form.quantity = Math.max(1, form.quantity - 1)} class="bg-gray-300 text-2xl px-4 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center">−</button>
+      <input type="text" min="1" bind:value={form.quantity} class="border rounded-lg p-4 text-xl text-center h-14 flex-1" inputmode="numeric" />
+      <button type="button" on:click={() => form.quantity = form.quantity + 1} class="bg-gray-300 text-2xl px-4 rounded-lg hover:bg-gray-400 h-14 w-14 flex items-center justify-center">+</button>
+    </div>
 
     <!-- 自取/外送 -->
     <div>
-      <label class="block font-semibold mb-2">取貨（滿10盒可外送）</label>
+      <label class="block font-semibold mb-2">取貨（滿5盒可外送:限林口、龜山）</label>
       <select bind:value={form.delivery} class="w-full border rounded-lg p-4 text-xl">
         {#if form.quantity >= 10}
-          <option value="自取">自取</option>
+          <option value="自取">自取:文化二路68巷2號</option>
           <option value="外送">外送</option>
         {:else}
           <option value="自取">自取</option>
@@ -171,13 +153,27 @@
       </select>
     </div>
 
+    <!-- 時段 -->
+    <div>
+      <label class="block font-semibold mb-2">選擇{form.delivery}時段</label>
+      <select bind:value={form.time} class="w-full border rounded-lg p-4 text-xl">
+        <option value="" disabled selected>請選擇時段</option>
+        {#each availableTimes as t}
+          <option value={t}>{t}</option>
+        {/each}
+      </select>
+    </div>
+
     <!-- 商品圖片 -->
     <div>
+      <img src="/contact.jpg" alt="contact" class="w-full max-h-96 object-contain rounded-md">
       <img src="/real.jpeg" alt="商品圖" class="w-full max-h-96 object-contain rounded-md">
     </div>
 
     <!-- 送出 -->
-    <button on:click={submitForm} class="bg-blue-500 text-white px-6 py-4 rounded-lg hover:bg-blue-600 w-full">送出訂單</button>
+    <button on:click={submitForm} class="bg-blue-500 text-white px-6 py-4 rounded-lg hover:bg-blue-600 w-full">
+      送出訂單
+    </button>
   </div>
 </div>
 
@@ -196,6 +192,7 @@
           <li>地址：{submittedOrder.address}</li>
         {/if}
         <li>日期：{submittedOrder.date}</li>
+        <li>時段：{submittedOrder.time}</li> <!-- ⭐ 新增顯示時段 -->
       </ul>
       <div class="flex flex-col sm:flex-row justify-center gap-3">
         <button on:click={modifyOrder} class="bg-gray-300 px-6 py-3 rounded-lg hover:bg-gray-400 w-full sm:w-auto text-xl">修改</button>
@@ -216,4 +213,3 @@
     </div>
   </div>
 {/if}
-
