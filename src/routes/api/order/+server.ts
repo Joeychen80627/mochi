@@ -5,7 +5,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const data = await request.json();
 
     // 這裡是你部署後的 Web App URL
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyrqSXaQk6mj1eq6eL9rg9gMnJFT_csxhh_RZMyhy6OqD2G0A4WBF-8u1RclZiIo4cm/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCCpB9k-HpOTvv0Vl0Zb2iD6TQauRC1nmNh08Et_oigQEAJ2X-KHYsT-4vpR49A18j/exec';
 
     const sheetResponse = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
