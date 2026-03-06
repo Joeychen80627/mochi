@@ -178,7 +178,7 @@
           <option value="自取">自取:文化二路68巷2號</option>
           <option value="外送">外送</option>
         {:else}
-          <option value="自取">自取</option>
+          <option value="自取">自取:文化二路68巷2號</option>
         {/if}
 
       </select>
